@@ -1,0 +1,108 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PropertyStatus {
+  AVAILABLE
+  RESERVED
+  SOLD
+}
+
+enum PipelineStage {
+  NEW
+  QUALIFIED
+  VISIT_SCHEDULED
+  OFFER
+  WON
+  LOST
+}
+
+model Agent {
+  id          String     @id @default(cuid())
+  name        String
+  email       String     @unique
+  phone       String?
+  createdAt   DateTime   @default(now())
+
+  leads       Lead[]
+  visits      Visit[]
+}
+
+model Lead {
+  id              String         @id @default(cuid())
+  name            String
+  email           String?
+  phone           String?
+  budgetMin       Float?
+  budgetMax       Float?
+  currency        String         @default("TND")
+  criteria        String?        // type de bien, quartier, surface recherchée...
+  gdprConsent     Boolean        @default(false)
+  stage           PipelineStage  @default(NEW)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  agentId         String?
+  agent           Agent?         @relation(fields: [agentId], references: [id])
+
+  visits          Visit[]
+  tasks           Task[]
+}
+
+model Property {
+  id           String            @id @default(cuid())
+  title        String
+  type         String            // appartement, maison, terrain...
+  price        Float
+  currency     String            @default("TND")
+  surface      Float?
+  neighborhood String
+  status       PropertyStatus    @default(AVAILABLE)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  visits       Visit[]
+  statusLog    PropertyStatusLog[]
+}
+
+model PropertyStatusLog {
+  id          String          @id @default(cuid())
+  propertyId  String
+  property    Property        @relation(fields: [propertyId], references: [id])
+  oldStatus   PropertyStatus
+  newStatus   PropertyStatus
+  changedAt   DateTime        @default(now())
+}
+
+model Visit {
+  id          String     @id @default(cuid())
+  date        DateTime
+  leadId      String
+  lead        Lead       @relation(fields: [leadId], references: [id])
+  propertyId  String
+  property    Property   @relation(fields: [propertyId], references: [id])
+  agentId     String
+  agent       Agent      @relation(fields: [agentId], references: [id])
+  createdAt   DateTime   @default(now())
+}
+
+model Task {
+  id          String    @id @default(cuid())
+  title       String
+  done        Boolean   @default(false)
+  leadId      String
+  lead        Lead      @relation(fields: [leadId], references: [id])
+  createdAt   DateTime  @default(now())
+}
