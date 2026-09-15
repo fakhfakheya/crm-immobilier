@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
+import { getTopMatches } from "@/lib/matching";
 
 export default async function LeadDetailPage({
   params,
@@ -18,6 +19,9 @@ export default async function LeadDetailPage({
   });
 
   if (!lead) return notFound();
+
+  const properties = await prisma.property.findMany();
+  const matches = getTopMatches(lead, properties);
 
   return (
     <div className="p-8 max-w-2xl">
@@ -72,7 +76,7 @@ export default async function LeadDetailPage({
         )}
       </div>
 
-      <div>
+      <div className="mb-6">
         <h2 className="font-semibold mb-2">Tâches ({lead.tasks.length})</h2>
         {lead.tasks.length === 0 ? (
           <p className="text-gray-400 text-sm">Aucune tâche.</p>
@@ -82,6 +86,35 @@ export default async function LeadDetailPage({
               <li key={task.id} className="flex items-center gap-2 text-sm">
                 <span>{task.done ? "✅" : "⬜"}</span>
                 {task.title}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div>
+        <h2 className="font-semibold mb-2">Biens compatibles</h2>
+        {matches.length === 0 ? (
+          <p className="text-gray-400 text-sm">
+            Aucun bien disponible pour le moment.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {matches.map(({ property, score, penalties }) => (
+              <li key={property.id} className="border rounded-lg p-3">
+                <div className="flex items-center justify-between">
+                  <p className="font-medium text-sm">{property.title}</p>
+                  <span className="text-sm font-bold">{score}%</span>
+                </div>
+                <p className="text-xs text-gray-500">
+                  {property.price.toLocaleString()} {property.currency} ·{" "}
+                  {property.neighborhood}
+                </p>
+                {penalties.length > 0 && (
+                  <p className="text-xs text-orange-600 mt-1">
+                    {penalties.join(", ")}
+                  </p>
+                )}
               </li>
             ))}
           </ul>
