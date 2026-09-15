@@ -35,7 +35,11 @@ export default async function LeadsPage() {
           <tbody>
             {leads.map((lead) => (
               <tr key={lead.id} className="border-b hover:bg-gray-50">
-                <td className="p-2">{lead.name}</td>
+                <td className="p-2">
+                  <Link href={`/leads/${lead.id}`} className="hover:underline">
+                    {lead.name}
+                  </Link>
+                </td>
                 <td className="p-2">{lead.email ?? "-"}</td>
                 <td className="p-2">
                   {lead.budgetMin ?? "?"} - {lead.budgetMax ?? "?"} {lead.currency}
