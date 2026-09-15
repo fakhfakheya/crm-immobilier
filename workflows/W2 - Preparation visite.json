@@ -1,0 +1,126 @@
+{
+  "name": "W2 - Preparation visite",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "visite-confirmee",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "01a417af-76c9-4fe8-b19e-c56eb7c60ca5",
+      "name": "Webhook",
+      "webhookId": "4c44d962-5b95-408f-834b-9b4158381d38"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c4429c85-7396-4718-87b7-141ae61bcf9a",
+              "name": "prospectNom",
+              "value": "={{ $json.body.prospectNom }}",
+              "type": "string"
+            },
+            {
+              "id": "adf0c35b-f322-4956-88fc-b8fa1105b7be",
+              "name": "bienTitre",
+              "value": "={{ $json.body.bienTitre }}",
+              "type": "string"
+            },
+            {
+              "id": "55540508-a63b-4479-9744-2cd8806f7b70",
+              "name": "dateVisite",
+              "value": "={{ $json.body.dateVisite }}",
+              "type": "string"
+            },
+            {
+              "id": "e3078267-f2b8-4a7e-a0d9-82b3ea5238b3",
+              "name": "email",
+              "value": "={{ $json.body.email}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "d9351911-98e0-44e5-8632-6fbf78bf799b",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.resend.com/emails",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"from\": \"onboarding@resend.dev\",\n  \"to\": \"{{ $json.email }}\",\n  \"subject\": \"Confirmation de votre visite\",\n  \"text\": \"Bonjour {{ $json.prospectNom }}, votre visite pour {{ $json.bienTitre }} est confirmée le {{ $json.dateVisite }}.\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        416,
+        -16
+      ],
+      "id": "35040683-3dd2-43ce-a553-c809f5d5c30f",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "rzdnSIVfoL2p5iJE",
+          "name": "Header Auth account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "db1e3548-96d1-4066-9839-29827d41f037",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e8a4b50009333be010b9ec333730ea7fe08a839f5b5e8c20f208b28298d141ef"
+  },
+  "id": "RHYDgSQAr9Ypq7dE",
+  "tags": []
+}
