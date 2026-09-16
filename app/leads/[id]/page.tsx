@@ -2,6 +2,36 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { getTopMatches } from "@/lib/matching";
 
+async function sendRelance(taskId: string, leadId: string) {
+  "use server";
+
+  const task = await prisma.task.findUnique({ where: { id: taskId } });
+  const lead = await prisma.lead.findUnique({ where: { id: leadId } });
+
+  if (!task || !lead || !lead.email) return;
+
+  const messageText = task.title.replace("Relance à valider : ", "");
+
+  await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+    },
+    body: JSON.stringify({
+      from: "onboarding@resend.dev",
+      to: lead.email,
+      subject: "Nouvelles concernant votre recherche",
+      text: messageText,
+    }),
+  });
+
+  await prisma.task.update({
+    where: { id: taskId },
+    data: { done: true },
+  });
+}
+
 export default async function LeadDetailPage({
   params,
 }: {
@@ -54,6 +84,7 @@ export default async function LeadDetailPage({
       </div>
 
       {lead.criteria && (
+	
         <div className="mb-6">
           <h2 className="font-semibold mb-2">Critères de recherche</h2>
           <p className="text-gray-700">{lead.criteria}</p>
@@ -76,21 +107,42 @@ export default async function LeadDetailPage({
         )}
       </div>
 
-      <div className="mb-6">
+            <div className="mb-6">
         <h2 className="font-semibold mb-2">Tâches ({lead.tasks.length})</h2>
         {lead.tasks.length === 0 ? (
           <p className="text-gray-400 text-sm">Aucune tâche.</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {lead.tasks.map((task) => (
-              <li key={task.id} className="flex items-center gap-2 text-sm">
-                <span>{task.done ? "✅" : "⬜"}</span>
-                {task.title}
+              <li
+                key={task.id}
+                className="flex items-center justify-between gap-2 text-sm border rounded-lg p-2"
+              >
+                <div className="flex items-center gap-2">
+                  <span>{task.done ? "✅" : "⬜"}</span>
+                  {task.title}
+                </div>
+                {!task.done && (
+                  <form
+                    action={async () => {
+                      "use server";
+                      await sendRelance(task.id, lead.id);
+                    }}
+                  >
+                    <button
+                      type="submit"
+                      className="bg-black text-white text-xs px-3 py-1 rounded"
+                    >
+                      Envoyer
+                    </button>
+                  </form>
+                )}
               </li>
             ))}
           </ul>
         )}
       </div>
+
 
       <div>
         <h2 className="font-semibold mb-2">Biens compatibles</h2>
