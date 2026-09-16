@@ -1,0 +1,188 @@
+{
+  "name": "W1 - Nouveau lead",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "nouveau-lead",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "1d19b0e4-81ee-4d08-9fec-e54f6f834c60",
+      "name": "Webhook",
+      "webhookId": "b812a7d4-0b94-46eb-a9fe-90ff7d8c4ff0"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7689a37a-bcbb-46df-b2bb-66a00ed58172",
+              "name": "nom",
+              "value": "={{ $json.body.nom }}",
+              "type": "string"
+            },
+            {
+              "id": "0f132cc1-2c09-4641-bb1b-a3f37f946bca",
+              "name": "email",
+              "value": "={{ $json.body.email }}",
+              "type": "string"
+            },
+            {
+              "id": "1702998f-4a9e-4945-a675-d2a3779600d6",
+              "name": "telephone",
+              "value": "={{ $json.body.telephone }}",
+              "type": "string"
+            },
+            {
+              "id": "c843f06b-3ea3-4384-bcc9-d7da76297479",
+              "name": "noteLibre",
+              "value": "={{ $json.body.noteLibre }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "a3509eca-29e8-4ed4-a65d-5334a0f76d62",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"openai/gpt-oss-20b\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Tu extrais des critères de recherche immobilière depuis un texte libre. Réponds UNIQUEMENT en JSON avec les clés: type (string), budgetMin (number ou null), budgetMax (number ou null), quartier (string ou null), surface (number ou null).\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"{{ $json.noteLibre }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        416,
+        0
+      ],
+      "id": "df328fd2-6084-4f37-9c28-ea64de9bffc4",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "p1LG53VrrF6SL73s",
+          "name": "Header Auth account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "93dbdc9c-ad1b-4171-b1ca-58769abb0d94",
+              "name": "criteresExtraits",
+              "value": "={{ $json.choices[0].message.content }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        624,
+        0
+      ],
+      "id": "d3771ea7-8b93-413f-a025-0111f7f5d9ee",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3000/api/leads",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  nom: $('Edit Fields').item.json.nom,\n  email: $('Edit Fields').item.json.email,\n  telephone: $('Edit Fields').item.json.telephone,\n  criteresExtraits: $json.criteresExtraits\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        832,
+        0
+      ],
+      "id": "23b5e386-3a15-4768-b08c-4a41415d7835",
+      "name": "HTTP Request1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "45b77778-1b1b-46bd-b054-c1adb4f2d584",
+  "meta": {
+    "instanceId": "e8a4b50009333be010b9ec333730ea7fe08a839f5b5e8c20f208b28298d141ef"
+  },
+  "id": "uwNa5KEgttoK4mHF",
+  "tags": []
+}
