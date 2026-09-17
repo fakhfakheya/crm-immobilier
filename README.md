@@ -1,36 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CRM Immobilier Augmenté — ZEN Group
 
-## Getting Started
+Application CRM pour conseillers immobiliers : pipeline de prospects, catalogue de biens, matching automatique, planification de visites avec détection de conflits, et automatisations n8n avec IA.
 
-First, run the development server:
+## 🔗 Démo
 
-```bash
+- **Application déployée** : https://crm-immobilier-two.vercel.app
+- **Dépôt Git** : https://github.com/fakhfakheya/crm-immobilier
+
+## 🛠️ Stack technique
+
+- **Frontend / Backend** : Next.js 16 (App Router, Server Actions)
+- **Base de données** : PostgreSQL (Neon) + Prisma ORM
+- **Styling** : Tailwind CSS
+- **Automatisations** : n8n (3 workflows)
+- **IA** : Groq (llama via API compatible OpenAI) — extraction de critères et génération de messages
+- **Email** : Resend
+- **Déploiement** : Vercel
+
+## 📦 Installation locale
+
+\`\`\`bash
+git clone https://github.com/fakhfakheya/crm-immobilier.git
+cd crm-immobilier
+npm install
+\`\`\`
+
+1. Copier \`.env.example\` vers \`.env\` et renseigner vos propres valeurs (base Neon, clé Resend)
+2. Appliquer le schéma de base de données :
+
+\`\`\`bash
+npx prisma migrate dev
+\`\`\`
+
+3. Lancer le serveur de développement :
+
+\`\`\`bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+\`\`\`
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+4. Ouvrir http://localhost:3000
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🏗️ Architecture
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- \`app/leads\` — Pipeline, liste, création et fiche détaillée des prospects
+- \`app/properties\` — Catalogue des biens + comparaison de 3 biens
+- \`app/pipeline\` — Vue Kanban des prospects par étape
+- \`app/api\` — Routes API (leads, tâches, visites, export RGPD)
+- \`lib/matching.ts\` — Moteur de scoring de compatibilité prospect/bien
+- \`lib/prisma.ts\` — Client Prisma singleton
+- \`prisma/schema.prisma\` — Modèle de données (Agent, Lead, Property, Visit, Task, PropertyStatusLog)
+- \`workflows/\` — Exports JSON des 3 workflows n8n
 
-## Learn More
+## 🤖 Workflows n8n
 
-To learn more about Next.js, take a look at the following resources:
+| Workflow | Déclencheur | Étapes |
+|---|---|---|
+| **W1 — Nouveau lead** | Webhook | Réception formulaire → extraction critères par IA (Groq) → création du lead + assignation conseiller |
+| **W2 — Préparation visite** | Webhook | Réception confirmation → email de confirmation (Resend) |
+| **W3 — Relance intelligente** | Manuel (simulerait un Cron quotidien) | Détection leads inactifs 5j+ → génération message par IA → sauvegarde en tâche à valider → conseiller valide manuellement avant envoi réel |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Les exports JSON sont dans le dossier \`workflows/\`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## ✅ Fonctionnalités clés
 
-## Deploy on Vercel
+- **Matching automatique** : score de compatibilité prospect/bien basé sur le budget, avec pénalités explicites
+- **Détection de conflits d'agenda** : impossible de planifier 2 visites pour le même conseiller ou le même bien sur un créneau ±1h
+- **RGPD** : export des données d'un prospect en JSON, suppression complète (cascade sur tâches et visites)
+- **IA contrôlée** : toute génération de message (relance) passe par une validation humaine avant envoi — aucun envoi automatique
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## ⚠️ Limites connues
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- L'envoi d'emails utilise le domaine de test Resend (\`onboarding@resend.dev\`), limité à l'adresse du compte Resend. En production, un domaine vérifié serait nécessaire.
+- Le workflow W3 (relance) est déclenché manuellement dans n8n pour la démo ; en production, un nœud Cron quotidien remplacerait le déclenchement manuel.
+- Le masquage RGPD des logs est implémenté via \`lib/gdpr.ts\` mais n'est pas encore appliqué systématiquement à tous les \`console.log\` du projet.
+- Pas de système d'authentification (hors périmètre du test technique).
+- Le catalogue de biens n'a pas de pagination — pourrait être ajouté pour un volume important de biens.
+
+## 🎥 Vidéo de démonstration
+
+[Lien à ajouter]
