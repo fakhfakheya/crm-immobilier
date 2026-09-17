@@ -76,6 +76,3 @@ Les exports JSON sont dans le dossier \`workflows/\`.
 - Pas de système d'authentification (hors périmètre du test technique).
 - Le catalogue de biens n'a pas de pagination — pourrait être ajouté pour un volume important de biens.
 
-## 🎥 Vidéo de démonstration
-
-[Lien à ajouter]
